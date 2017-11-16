@@ -2,7 +2,7 @@
 #include <string.h>
 #include <unistd.h>
 #include <stdlib.h>
-#include "../manager/testing.h"
+#include "testing.h"
 
 char *topic = "Topic #1";
 
