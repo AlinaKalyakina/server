@@ -1,4 +1,4 @@
-enum state {ERR = -1, OK = 0};
+enum state {ERR = -1, OK = 0, END = -2};
 enum commands {QUE, ANS, QNUM, TOP, SHUT};
 enum {MAXLEN = 255};
 
