@@ -3,6 +3,13 @@
 #include <unistd.h>
 #include <stdlib.h>
 #include "testing.h"
+#include <signal.h>
+
+void
+SigHandler(int sig)
+{
+    exit(0);
+}
 
 char *topic = "Topic #1";
 
@@ -101,6 +108,7 @@ FAIL:
 
 int main(void)
 {
+    signal(SIGINT, SigHandler);
     int cmd;
     do {
         read(0,&cmd, sizeof(cmd));
