@@ -80,7 +80,6 @@ ans(void)
         read(0, ans, str_l);
         par_n -= str_l;
     }
-
     return;
 FAIL:
     exit(ERR);
@@ -114,7 +113,9 @@ int main(void)
         read(0,&cmd, sizeof(cmd));
         unsigned int i = 0;
         while (cmd != instr[i].name && (++i) < sizeof(instr)/sizeof(instr[i]));
-        instr[i].func();
+        if (i < sizeof(instr)/sizeof(instr[0])) {
+            instr[i].func();
+        } 
     } while (1);
 }
 
