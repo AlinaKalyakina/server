@@ -2,6 +2,7 @@
 #include <stdlib.h>
 #include "TandT.h"
 #include <signal.h>
+#include <stdio.h>
 
 void handler (int sig)
 {
@@ -15,10 +16,10 @@ Que task[] = {{"Topic #1", 0, NULL},
               {"12/3?", NUMERAL, "4"},
               {"What country we leave in?", STR, "Russia"}};
 
-Cmd instr[] = {{QUE, give_que},
-               {ANS, rcv_ans},
-               {QNUM, give_num},
-               {TOP, give_topic}};
+Cmd instr[] = {{QUE, sndq},
+               {ANS, sndcheck},
+               {QNUM, sndq_num},
+               {TOP, sndtop}};
 
 int main(void)
 {
@@ -30,7 +31,10 @@ int main(void)
         while (cmd != instr[i].name && (++i) < sizeof(instr)/sizeof(instr[i]));
         if (i < sizeof(instr)/sizeof(instr[0])) {
             instr[i].func(task, sizeof(task)/sizeof(task[0]) - 1);
-        } 
+        } else {
+            fputs("Requested instruction doesn't exists", stderr);
+            exit(0); 
+        }  
     } while (1);
 }
 
