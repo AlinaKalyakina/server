@@ -1,8 +1,8 @@
 // n - number of real questions!!!!!!!!
-enum state {ERR = -1, OK = 0, END = -2};
+enum state {ERR = -1, OK = 0};
 enum anses {RIGHT, WRONG};
 enum commands {QUE, ANS, QNUM, TOP, SHUT};
-enum {MAXLEN = 255};
+enum {MAXLEN = 63};
 enum quetypes {STR, NUMERAL};
 
 #define ASSERT(x)   do {\
@@ -28,16 +28,17 @@ typedef struct {
 } Cmd;
 
 //for test-programe
-void give_que(Que task [], int n);
-void rcv_ans(Que task [], int n);
-void give_num(Que task [], int n);
-void give_topic(Que task [], int n);
+void sndq(Que task [], int n);
+void sndcheck(Que task [], int n);
+void sndq_num(Que task [], int n);
+void sndtop(Que task [], int n);
 
 
 //for tester
-int getq(int fdin, int fdout, int n);
-int checkans(int fdin, int fdout, int n);
-int gettop ( char* topic, int fdin, int fdout);
-int getq_num (int fdin, int fdout);
+int getfrag(int fdin, char *frag, int n);
+int reqq(int fdin, int fdout, int n);
+int reqcheck(int fdin, int fdout, char* ans, int n);
+int reqtop(char* topic, int fdin, int fdout);
+int reqq_num (int fdin, int fdout);
 
 
