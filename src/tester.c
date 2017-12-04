@@ -109,18 +109,16 @@ main(int argc, char *argv[])
                 break;
         }
     }
-    kill(chpid, SIGINT);
-    wait(NULL);
     printf("\nYour result is %d\n", (5*right)/q_num);
     close(fdin[0]);
     close(fdout[1]);
+    wait(NULL);
     return OK;
 FAIL:
     perror(NULL);
-    kill(chpid, SIGINT);
-    wait(NULL);
     printf("Server crashed!\n");
     close(fdin[0]);
     close(fdout[1]);
+    wait(NULL);
     return ERR;
 }

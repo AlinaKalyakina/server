@@ -16,17 +16,14 @@ Checker check[] = {{STR, ansstr}, {NUMERAL, ansnum}};
 int 
 getfrag(int fdin, char *frag, int n)
 {
-    ASSERT((n = read(fdin, frag, n)) != ERR);
-    return n;
-FAIL:
-    return ERR;
+    return read(fdin, frag, n);
 }
 
 int
 reqq(int fdin, int fdout, int n)
 {
     int str_l, cmd[2] = {QUE, n};
-    ASSERT(write(fdout, &cmd, 2*sizeof(cmd[0])) != ERR);
+    ASSERT(write(fdout, &cmd, 2 * sizeof(cmd[0])) != ERR);
     ASSERT(read(fdin, &str_l, sizeof(str_l)) != ERR);
     return str_l;
 FAIL:
