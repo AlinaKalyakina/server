@@ -83,4 +83,14 @@ getfifoname(unsigned long pid, char *filename, const char* mode)
     strcat(filename, extfifo);
 }
 
+int
+makefifo(char *fifoname, const char *mode, long pid)
+{
+    getfifoname(pid, fifoname, mode);
+    remove(fifoname);
+    ASSERT(mkfifo(fifoname, 0666 | S_IFIFO) != ERR);
+    return OK;
+FAIL:
+    return ERR;
+}
 

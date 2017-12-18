@@ -22,7 +22,7 @@
 
 enum {CONATT = 3};
 
-int msgid, managernum = 0;
+int msgid;
 char fifoCtoM[MAXNAME + 1], fifoMtoC[MAXNAME + 1];
 
 int // WRONG == wrong format, ERR = error or ctrl+D, OK == ok
@@ -37,6 +37,10 @@ getans(char *ans)
             goto FAIL;
         }
         puts("Your answer is too long, try again");
+        return WRONG;
+    }
+    if (strlen(ans) == 1) {
+        puts("Your answer is empty, try again");
         return WRONG;
     }
     ans[strlen(ans) - 1] = '\0';
@@ -73,7 +77,7 @@ void handler (int sig)
     switch (sig) {
     case SIGALRM:
         msgrcv(msgid, &mes, sizeof mes - sizeof(long), getpid(), IPC_NOWAIT);
-        puts("The server response time was expired, try again later");
+        puts("The server response time has expired, try again later");
         break;
     default:
         break;
@@ -87,41 +91,20 @@ int
 introduction(void)
 {
     char ans[BUFLEN + 2];
-    int id;
+    int id, suc;
     puts("Introduct yourself, please");
-    while(getans(ans) == ERR || sscanf(ans, "%d", &id) != 1) {
+    while(!((suc = getans(ans)) != WRONG && sscanf(ans, "%d", &id) == 1 && id > 0)) {
         if (feof(stdin)) {
             exit(0);
         }
         puts("Try again");
     }
-    return id;
-}
-
-int
-identif(int fdin, int fdout, int id)
-{
-    switch(id = getinfo(fdin, fdout, id)) {
-        case WRONG:
-            puts("You've already passed this test");
-        break;
-        case NOPLACE:
-            puts("No more place for statistic");
-        break;
+    if (suc == ERR) {
+        id = 0;
     }
     return id;
 }
 
-int
-makefifo(char *fifoname, const char *mode)
-{
-    getfifoname(getpid(), fifoname, mode);
-    remove(fifoname);
-    ASSERT(mkfifo(fifoname, 0666 | S_IFIFO) != ERR);
-    return OK;
-FAIL:
-    return ERR;
-}
 
 int
 main(int argc, char *argv[])
@@ -129,13 +112,14 @@ main(int argc, char *argv[])
     signal(SIGPIPE, SIG_IGN);
     signal(SIGINT, handler);
     signal(SIGALRM, handler);
+    getfifoname(getpid(), fifoCtoM, CtoM);
+    getfifoname(getpid(), fifoMtoC, MtoC);
     if (argc < 2) {
         puts("You haven't told test topic");
         exit(0);
     }
     char ipcfile[MAXNAME + 1];
     getipcname(argv[1], ipcfile);
-    puts(ipcfile);
     if (access(ipcfile, F_OK) != 0) {
         puts("Server with such topic doesn't exist");
         exit(0);
@@ -149,32 +133,46 @@ main(int argc, char *argv[])
     }
     ASSERT(msgid != ERR);
     int id = introduction();
+    if (id == 0) {
+        goto TERM;
+    }
+    int managernum = 0, reportnum = 0;
 NEWMAN:
     managernum++;
     if (managernum > 3) {
         puts("Too many attempts to reanimate manager");
         goto TERM;
     }
-    ASSERT(makefifo(fifoCtoM, CtoM) != ERR);
-    ASSERT(makefifo(fifoMtoC, MtoC) != ERR);
+    ASSERT(makefifo(fifoCtoM, CtoM, getpid()) != ERR);
     ServMsg mes;
     mes.type = getpid();
     int fdout = -1, fdin = -1;
-    alarm(10);
+    alarm(3);
     msgsnd(msgid, &mes, sizeof(mes) - sizeof(long), 0);
-    ASSERT((fdin = open(fifoMtoC, O_RDONLY)) != ERR);
     ASSERT((fdout = open(fifoCtoM, O_WRONLY)) != ERR);
+    ASSERT((fdin = open(fifoMtoC, O_RDONLY)) != ERR);
     alarm(0);
     int ansq_num, allq_num, right; 
-    GETMAN((ansq_num = identif(fdin, fdout, id)) == ERR);
-    if (ansq_num < 0) {
+    GETMAN((ansq_num = getinfo(fdin, fdout, id)) == ERR);
+    if (ansq_num == NOPLACE) {
+        puts("No more place for a new record");
         goto TERM;
+    } else {
+        if (ansq_num == WRONG) {
+            puts("Someone with the same id is passing this test");
+            goto TERM;
+        }
     }
     GETMAN((allq_num = req_q_num(fdin, fdout)) == ERR);
     GETMAN((right = reqr_num(fdin, fdout)) == ERR);
-    if(managernum == 1) {
+    if (allq_num == ansq_num) {
+        printf("You've already passed this test. Your result was %d.\n", right * 5 /allq_num);
+        goto TERM;
+    }
+    if (reportnum == 0) {
         printf("Test contains %d questions, you've answered %d (%d of them correctly)\n", \
                allq_num, ansq_num, right);
+        reportnum++;        
     }
     int i;
     for (i = ansq_num + 1; i <= allq_num; i++) {
@@ -188,7 +186,7 @@ NEWMAN:
         }
         switch (res = req_check(fdin, fdout, ans, i)) {
             case ERR:
-                goto NEWMAN;
+                GETMAN(1);
                 break;
             case WRONG:
                 puts("Wrong answer!");
@@ -214,5 +212,5 @@ TERM:
     close(fdout);
     remove(fifoCtoM);
     remove(fifoMtoC);
-    return ERR;
+    return OK;
 }

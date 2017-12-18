@@ -1,3 +1,5 @@
+#ifndef TESTERINTERFACE_H_INCLUDED
+#define TESTERINTERFACE_H_INCLUDED
 // n - number of real questions!!!!!!!!
 enum quetypes {STR, NUMERAL};
 
@@ -22,3 +24,4 @@ int sndq(Que task [], int n);
 int sndcheck(Que task [], int n);
 int sndq_num(Que task [], int n);
 int sndtop(Que task [], int n);
+#endif

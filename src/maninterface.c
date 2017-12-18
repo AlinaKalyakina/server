@@ -10,6 +10,7 @@
 #include <sys/shm.h>
 #include <sys/sem.h>
 #include <string.h>
+#include "dataop.h"
 
 int
 give_q(int fdin, int fdout, int garb)
@@ -46,19 +47,11 @@ FAIL:
 int
 give_right_num(int semid, int shmid, int recnum)
 {
-    struct sembuf sop;
-    sop.sem_num = 0;
-    sop.sem_op = -1;
-    sop.sem_flg = SEM_UNDO;
-    ASSERT(semop(semid, &sop, 1) != ERR);
     StRec *st = shmat(shmid, 0,  0);
     ASSERT(st != NULL);
-    int n = st[recnum].rnum;
+    int n = getdata(st, recnum, semid, 'r');
     ASSERT(shmdt(st) != ERR);
-    sop.sem_flg = 0;
-    sop.sem_op = 1;
-    ASSERT(semop(semid, &sop, 1) != ERR);
-    ASSERT(write(1, &n, sizeof n) > 0);
+    write(1, &n, sizeof n);
     return OK;
 FAIL:
     perror(MAN);
@@ -74,47 +67,15 @@ give_check(int fdin, int fdout, int garb)
     int realsize, pos = 0, rest = len;
     char ans[BUFLEN + 1];
     while (rest > 0) {
-        realsize = get_frag(0, ans + pos, rest);// !!!
+        if ((realsize = get_frag(0, ans + pos, rest)) == ERR) {
+            return ERR;
+        }
         pos += realsize;
         rest -=realsize;
     }
     ans[pos] = '\0';
-    num = req_check(fdin, fdout, ans, num);// !!!
+    num = req_check(fdin, fdout, ans, num);
     ASSERT(write(1, &num, sizeof num) > 0);
-    return OK;
-FAIL:
-    perror(MAN);
-    return ERR;
-}
-
-int
-save(int semid, int shmid, int recnum) // maybe it's better to give number of record and attach shm every time
-{
-    int op;
-    READCHECK(read(0, &op, sizeof op));
-    struct sembuf sop;
-    sop.sem_num = 0;
-    sop.sem_op = -1;
-    sop.sem_flg = SEM_UNDO;
-    ASSERT(semop(semid, &sop, 1) != ERR);
-    StRec *st = shmat(shmid, 0,  0);
-    ASSERT(st != NULL);
-    switch (op) {
-    case RIGHT:
-        st[recnum].rnum++;
-    case WRONG:
-        st[recnum].qnum++;
-        break;
-    default:
-        goto FAIL;
-        break;
-    }
-    ASSERT(shmdt(st) != ERR);
-    sop.sem_flg = 0;
-    sop.sem_op = 1;
-    ASSERT(semop(semid, &sop, 1) != ERR);
-    op = OK;
-    ASSERT(write(1, &op, sizeof op) > 0);
     return OK;
 FAIL:
     perror(MAN);
@@ -127,6 +88,21 @@ getclid(void)
     int id;
     READCHECK(read(0, &id, sizeof id));
     return id;
+FAIL:
+    perror(MAN);
+    return ERR;
+}
+int
+save(int rec_semid, int rec_shmid, int recnum) 
+{
+    int op;
+    READCHECK(read(0, &op, sizeof op));
+    StRec *rec = shmat(rec_shmid, 0,  0);
+    ASSERT(rec != NULL);
+    op = mkchg(rec, rec_semid, recnum, op);
+    ASSERT(shmdt(rec) != ERR);
+    ASSERT(write(1, &op, sizeof op) > 0);
+    return op;
 FAIL:
     perror(MAN);
     return ERR;

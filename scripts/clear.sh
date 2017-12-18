@@ -1,3 +1,5 @@
 #! /bin/bash
-OUT=garbage
+OUT=./garbage/
+RES=./results/
 rm -r -f $OUT
+rm -r -f $RES

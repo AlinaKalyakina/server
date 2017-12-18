@@ -21,5 +21,9 @@ static const char SER[] = "Server";
 static const char MAN[] = "Manager";
 static const char CLN[] = "Client";
 static const char TST[] = "Test-program";
+static const char STAT[] = "Test-program";
+static const char DATAOP[] = "Shared memory work";
+static const char manpath[] = "./garbage/manager.out";
+static const char statpath[] = "./garbage/statistic.out";
 #endif
 
